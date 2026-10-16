@@ -1,6 +1,7 @@
 package org.example.entities;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "commande_produit")
@@ -21,11 +22,15 @@ public class CommandeProduit {
     @Column(nullable = false)
     private int quantite;
 
+    @Column(name = "prix_unitaire", nullable = false, precision = 10, scale = 2)
+    private BigDecimal prixUnitaire;
+
     public CommandeProduit() { }
     public CommandeProduit(Commande commande, Produit produit, int quantite) {
         this.commande = commande;
         this.produit = produit;
         this.quantite = quantite;
+        this.prixUnitaire = produit.getPrix();
     }
 
     public CommandeProduitPK getId() { return id; }
@@ -38,4 +43,12 @@ public class CommandeProduit {
         if (quantite <= 0) throw new IllegalArgumentException("La quantité doit être strictement positive");
         this.quantite = quantite;
     }
+    public BigDecimal getPrixUnitaire() { return prixUnitaire; }
+    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+        if (prixUnitaire == null || prixUnitaire.signum() < 0) {
+            throw new IllegalArgumentException("Le prix unitaire doit être positif");
+        }
+        this.prixUnitaire = prixUnitaire;
+    }
+    public BigDecimal getMontant() { return prixUnitaire.multiply(BigDecimal.valueOf(quantite)); }
 }

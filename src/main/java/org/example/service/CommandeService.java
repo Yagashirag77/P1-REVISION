@@ -33,6 +33,7 @@ public class CommandeService extends CrudService<Commande, Long> {
                 }
                 produitGere.retirerStock(ligne.getQuantite());
                 ligne.setProduit(produitGere);
+                ligne.setPrixUnitaire(produitGere.getPrix());
             }
             em.persist(commande);
             tx.commit();

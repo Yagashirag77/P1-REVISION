@@ -9,6 +9,7 @@ import org.example.entities.Categorie;
 import org.example.entities.Client;
 import org.example.entities.Commande;
 import org.example.entities.Produit;
+import org.example.entities.StatutCommande;
 import org.example.entities.User;
 import org.example.service.CrudService;
 import org.example.service.CommandeService;
@@ -41,6 +42,7 @@ public class AppTest extends TestCase {
         categories.create(categorie);
         Produit stylo = new Produit("STY-BLEU", "Stylo bleu", "Stylo à bille",
                 new BigDecimal("1.20"), 8, categorie);
+        stylo.setSeuilAlerte(10);
         produits.create(stylo);
 
         Produit fetched = produits.findByIdWithCategorie(stylo.getId());
@@ -49,6 +51,8 @@ public class AppTest extends TestCase {
         assertEquals(1, produits.search("stylo", BigDecimal.ONE, new BigDecimal("2.00")).size());
         assertFalse(produits.findByCategorie(categorie.getId()).isEmpty());
         assertTrue(produits.findStockFaible(10).stream()
+                .anyMatch(produit -> "STY-BLEU".equals(produit.getReference())));
+        assertTrue(produits.findAReapprovisionner().stream()
                 .anyMatch(produit -> "STY-BLEU".equals(produit.getReference())));
     }
 
@@ -65,11 +69,18 @@ public class AppTest extends TestCase {
         new CommandeService().create(commande);
         assertEquals(7, produits.getById(casque.getId()).getStock());
 
+        Produit casqueGere = produits.getById(casque.getId());
+        casqueGere.setPrix(new BigDecimal("79.00"));
+        produits.update(casqueGere);
+
         List<VenteCategorieDTO> rapport = new RapportVentesService().ventesMoisPrecedent();
         VenteCategorieDTO audio = rapport.stream()
                 .filter(item -> "Audio".equals(item.getCategorie()))
                 .findFirst().orElseThrow(AssertionError::new);
         assertEquals(0, new BigDecimal("150.00").compareTo(audio.getChiffreAffaires()));
+        assertEquals("CSQ-50", new RapportVentesService()
+                .produitsLesPlusVendus(YearMonth.now().minusMonths(1), 3)
+                .get(0).getReference());
     }
 
     public void testPersisteUneSousClasseAvecHeritageJoined() {
@@ -78,5 +89,15 @@ public class AppTest extends TestCase {
         clients.create(client);
         assertNotNull(client.getId());
         assertEquals(1, new CrudService<User, Long>(User.class).getAll().size());
+    }
+
+    public void testTransitionsMetierCommande() {
+        Commande commande = new Commande();
+        commande.valider();
+        assertEquals(StatutCommande.VALIDEE, commande.getStatut());
+        commande.expedier();
+        assertEquals(StatutCommande.EXPEDIEE, commande.getStatut());
+        commande.livrer();
+        assertEquals(StatutCommande.LIVREE, commande.getStatut());
     }
 }

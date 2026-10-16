@@ -54,10 +54,45 @@ public class Commande {
     public void addProduit(Produit produit, int quantite) {
         if (produit == null) throw new IllegalArgumentException("Le produit est obligatoire");
         if (quantite <= 0) throw new IllegalArgumentException("La quantité doit être strictement positive");
+        for (CommandeProduit ligne : lignes) {
+            if (ligne.getProduit() == produit || (produit.getId() != null
+                    && produit.getId().equals(ligne.getProduit().getId()))) {
+                ligne.setQuantite(ligne.getQuantite() + quantite);
+                return;
+            }
+        }
         lignes.add(new CommandeProduit(this, produit, quantite));
     }
 
     public void removeLigne(CommandeProduit ligne) {
         if (lignes.remove(ligne)) ligne.setCommande(null);
+    }
+
+    public void valider() {
+        exigerStatut(StatutCommande.EN_PREPARATION);
+        statut = StatutCommande.VALIDEE;
+    }
+
+    public void expedier() {
+        exigerStatut(StatutCommande.VALIDEE);
+        statut = StatutCommande.EXPEDIEE;
+    }
+
+    public void livrer() {
+        exigerStatut(StatutCommande.EXPEDIEE);
+        statut = StatutCommande.LIVREE;
+    }
+
+    public void annuler() {
+        if (statut == StatutCommande.LIVREE || statut == StatutCommande.ANNULEE) {
+            throw new IllegalStateException("Cette commande ne peut plus être annulée");
+        }
+        statut = StatutCommande.ANNULEE;
+    }
+
+    private void exigerStatut(StatutCommande attendu) {
+        if (statut != attendu) {
+            throw new IllegalStateException("Transition interdite depuis le statut " + statut);
+        }
     }
 }

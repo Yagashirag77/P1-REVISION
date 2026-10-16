@@ -77,6 +77,13 @@ public class ProduitService extends CrudService<Produit, Long> {
         } finally { em.close(); }
     }
 
+    public List<Produit> findAReapprovisionner() {
+        EntityManager em = entityManager();
+        try {
+            return em.createNamedQuery("Produit.findAReapprovisionner", Produit.class).getResultList();
+        } finally { em.close(); }
+    }
+
     private EntityManager entityManager() {
         return HibernateUtil.getEntityManagerFactory().createEntityManager();
     }

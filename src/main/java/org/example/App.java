@@ -32,15 +32,20 @@ public final class App {
             String suffixe = String.valueOf(System.currentTimeMillis());
             Produit souris = new Produit("MOU-" + suffixe, "Souris RGB",
                     "Souris ergonomique à six boutons", new BigDecimal("349.90"), 15, gaming);
+            souris.setSeuilAlerte(6);
             produits.create(souris);
 
             Commande commande = new Commande();
             commande.setLivraisonPrevue(LocalDate.now().plusDays(3));
             commande.setCommentaire("Livraison souhaitée dans l'après-midi");
             commande.addProduit(souris, 2);
-            new CommandeService().create(commande);
+            CommandeService commandes = new CommandeService();
+            commandes.create(commande);
+            commande.valider();
+            commandes.update(commande);
 
-            System.out.println("Commande " + commande.getReference() + " créée avec succès");
+            System.out.println("Commande " + commande.getReference() + " enregistrée avec le statut "
+                    + commande.getStatut());
             System.out.println("Stock restant pour " + souris.getLibelle() + " : "
                     + produits.getById(souris.getId()).getStock());
         } finally {

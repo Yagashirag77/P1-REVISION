@@ -13,7 +13,8 @@ import java.util.UUID;
     @NamedQuery(name = "Produit.findAll", query = "SELECT p FROM Produit p"),
     @NamedQuery(name = "Produit.findByCategorie", query = "SELECT p FROM Produit p WHERE p.categorie.id = :catId"),
     @NamedQuery(name = "Produit.searchByLibelle", query = "SELECT p FROM Produit p WHERE LOWER(p.libelle) LIKE LOWER(CONCAT('%', :term, '%'))"),
-    @NamedQuery(name = "Produit.findStockFaible", query = "SELECT p FROM Produit p WHERE p.actif = true AND p.stock <= :seuil ORDER BY p.stock")
+    @NamedQuery(name = "Produit.findStockFaible", query = "SELECT p FROM Produit p WHERE p.actif = true AND p.stock <= :seuil ORDER BY p.stock"),
+    @NamedQuery(name = "Produit.findAReapprovisionner", query = "SELECT p FROM Produit p WHERE p.actif = true AND p.stock <= p.seuilAlerte ORDER BY p.stock")
 })
 public class Produit {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +32,9 @@ public class Produit {
     @Column(nullable = false)
     private int stock;
 
+    @Column(name = "seuil_alerte", nullable = false)
+    private int seuilAlerte = 5;
+
     @Column(nullable = false)
     private boolean actif = true;
 
@@ -39,6 +43,9 @@ public class Produit {
 
     @Column(name = "date_creation", nullable = false)
     private LocalDate dateCreation;
+
+    @Version
+    private long version;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "categorie_id", nullable = false)
@@ -74,6 +81,11 @@ public class Produit {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public int getStock() { return stock; }
+    public int getSeuilAlerte() { return seuilAlerte; }
+    public void setSeuilAlerte(int seuilAlerte) {
+        if (seuilAlerte < 0) throw new IllegalArgumentException("Le seuil d'alerte ne peut pas être négatif");
+        this.seuilAlerte = seuilAlerte;
+    }
     public boolean isActif() { return actif; }
     public void setActif(boolean actif) { this.actif = actif; }
     public BigDecimal getPrix() { return prix; }
@@ -95,6 +107,6 @@ public class Produit {
 
     @Override public String toString() {
         return "Produit{id=" + id + ", reference='" + reference + "', libelle='" + libelle
-                + "', prix=" + prix + ", stock=" + stock + "}";
+                + "', prix=" + prix + ", stock=" + stock + ", seuilAlerte=" + seuilAlerte + "}";
     }
 }
